@@ -2,19 +2,37 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 
+/// <summary>
+/// Контроллер для работы с заданиями.
+/// </summary>
+/// <remarks>
+/// Доступ к заданиям разделён по ролям:
+/// - Студент: просмотр заданий и обновление статуса выполнения
+/// - Преподаватель: просмотр, создание, редактирование и удаление заданий
+/// - Администратор: полный доступ
+/// </remarks>
 [Route("api/[controller]")]
 [ApiController]
 public class TasksController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
 
+    /// <summary>
+    /// Конструктор контроллера TasksController.
+    /// </summary>
+    /// <param name="context">Контекст базы данных ApplicationDbContext</param>
     public TasksController(ApplicationDbContext context)
     {
         _context = context;
     }
 
-    // ---------- GET: api/Tasks ----------
-    // Доступно всем авторизованным пользователям (Студенты, Преподаватели, Администраторы)
+    /// <summary>
+    /// Получить список всех заданий с информацией о теме.
+    /// </summary>
+    /// <returns>Список заданий типа <see cref="Task"/></returns>
+    /// <remarks>
+    /// Доступно всем авторизованным пользователям: Студент, Преподаватель, Администратор.
+    /// </remarks>
     [Authorize(Roles = "Студент,Преподаватель,Администратор")]
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Task>>> GetTasks()
@@ -22,7 +40,14 @@ public class TasksController : ControllerBase
         return await _context.Tasks.Include(t => t.Topic).ToListAsync();
     }
 
-    // ---------- GET: api/Tasks/5 ----------
+    /// <summary>
+    /// Получить конкретное задание по идентификатору.
+    /// </summary>
+    /// <param name="id">Идентификатор задания</param>
+    /// <returns>Задание типа <see cref="Task"/> или код 404, если задание не найдено</returns>
+    /// <remarks>
+    /// Доступно всем авторизованным пользователям: Студент, Преподаватель, Администратор.
+    /// </remarks>
     [Authorize(Roles = "Студент,Преподаватель,Администратор")]
     [HttpGet("{id}")]
     public async Task<ActionResult<Task>> GetTask(int id)
@@ -35,8 +60,14 @@ public class TasksController : ControllerBase
         return task;
     }
 
-    // ---------- POST: api/Tasks ----------
-    // Только преподаватели и администраторы могут создавать задания
+    /// <summary>
+    /// Создать новое задание.
+    /// </summary>
+    /// <param name="task">Объект задания для создания</param>
+    /// <returns>Созданное задание с кодом 201 и ссылкой на ресурс</returns>
+    /// <remarks>
+    /// Доступно только преподавателям и администраторам.
+    /// </remarks>
     [Authorize(Roles = "Преподаватель,Администратор")]
     [HttpPost]
     public async Task<ActionResult<Task>> CreateTask(Task task)
@@ -47,8 +78,15 @@ public class TasksController : ControllerBase
         return CreatedAtAction(nameof(GetTask), new { id = task.TaskId }, task);
     }
 
-    // ---------- PUT: api/Tasks/5 ----------
-    // Только преподаватели и администраторы могут редактировать задание
+    /// <summary>
+    /// Обновить существующее задание.
+    /// </summary>
+    /// <param name="id">Идентификатор задания для обновления</param>
+    /// <param name="task">Объект задания с обновлёнными данными</param>
+    /// <returns>Код 204 при успешном обновлении, 400 при несоответствии id, 404 если задание не найдено</returns>
+    /// <remarks>
+    /// Доступно только преподавателям и администраторам.
+    /// </remarks>
     [Authorize(Roles = "Преподаватель,Администратор")]
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateTask(int id, Task task)
@@ -73,8 +111,14 @@ public class TasksController : ControllerBase
         return NoContent();
     }
 
-    // ---------- DELETE: api/Tasks/5 ----------
-    // Только преподаватели и администраторы могут удалять задания
+    /// <summary>
+    /// Удалить задание по идентификатору.
+    /// </summary>
+    /// <param name="id">Идентификатор задания для удаления</param>
+    /// <returns>Код 204 при успешном удалении или 404, если задание не найдено</returns>
+    /// <remarks>
+    /// Доступно только преподавателям и администраторам.
+    /// </remarks>
     [Authorize(Roles = "Преподаватель,Администратор")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteTask(int id)
@@ -89,8 +133,16 @@ public class TasksController : ControllerBase
         return NoContent();
     }
 
-    // ---------- PUT: api/Tasks/5/status ----------
-    // Только студенты могут обновлять статус выполнения своего задания
+    /// <summary>
+    /// Обновить статус выполнения задания конкретным студентом.
+    /// </summary>
+    /// <param name="id">Идентификатор задания</param>
+    /// <param name="statusId">Идентификатор нового статуса</param>
+    /// <param name="userId">Идентификатор студента, обновляющего статус</param>
+    /// <returns>Объект <see cref="TaskStatusHistory"/> с новым статусом</returns>
+    /// <remarks>
+    /// Доступно только студентам. Создаёт запись в истории статусов задания.
+    /// </remarks>
     [Authorize(Roles = "Студент")]
     [HttpPut("{id}/status")]
     public async Task<IActionResult> UpdateTaskStatus(int id, [FromBody] int statusId, [FromQuery] int userId)

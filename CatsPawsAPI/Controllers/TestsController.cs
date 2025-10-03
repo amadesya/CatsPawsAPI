@@ -2,18 +2,37 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 
+/// <summary>
+/// Контроллер для работы с тестами.
+/// </summary>
+/// <remarks>
+/// Доступ к тестам разделён по ролям:
+/// - Студент: просмотр тестов и отправка ответов
+/// - Преподаватель: просмотр, создание, редактирование и удаление тестов
+/// - Администратор: полный доступ
+/// </remarks>
 [Route("api/[controller]")]
 [ApiController]
 public class TestsController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
 
+    /// <summary>
+    /// Конструктор контроллера TestsController.
+    /// </summary>
+    /// <param name="context">Контекст базы данных ApplicationDbContext</param>
     public TestsController(ApplicationDbContext context)
     {
         _context = context;
     }
 
-    // ---------- GET: api/Tests ----------
+    /// <summary>
+    /// Получить список всех тестов с информацией о теме.
+    /// </summary>
+    /// <returns>Список тестов типа <see cref="Test"/></returns>
+    /// <remarks>
+    /// Доступно всем авторизованным пользователям: Студент, Преподаватель, Администратор.
+    /// </remarks>
     [Authorize(Roles = "Студент,Преподаватель,Администратор")]
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Test>>> GetTests()
@@ -21,7 +40,14 @@ public class TestsController : ControllerBase
         return await _context.Tests.Include(t => t.Topic).ToListAsync();
     }
 
-    // ---------- GET: api/Tests/5 ----------
+    /// <summary>
+    /// Получить конкретный тест по идентификатору с вопросами и вариантами ответов.
+    /// </summary>
+    /// <param name="id">Идентификатор теста</param>
+    /// <returns>Тест типа <see cref="Test"/> или код 404, если тест не найден</returns>
+    /// <remarks>
+    /// Доступно всем авторизованным пользователям: Студент, Преподаватель, Администратор.
+    /// </remarks>
     [Authorize(Roles = "Студент,Преподаватель,Администратор")]
     [HttpGet("{id}")]
     public async Task<ActionResult<Test>> GetTest(int id)
@@ -37,7 +63,14 @@ public class TestsController : ControllerBase
         return test;
     }
 
-    // ---------- POST: api/Tests ----------
+    /// <summary>
+    /// Создать новый тест.
+    /// </summary>
+    /// <param name="test">Объект теста для создания</param>
+    /// <returns>Созданный тест с кодом 201 и ссылкой на ресурс</returns>
+    /// <remarks>
+    /// Доступно только преподавателям и администраторам.
+    /// </remarks>
     [Authorize(Roles = "Преподаватель,Администратор")]
     [HttpPost]
     public async Task<ActionResult<Test>> CreateTest(Test test)
@@ -47,7 +80,15 @@ public class TestsController : ControllerBase
         return CreatedAtAction(nameof(GetTest), new { id = test.TestId }, test);
     }
 
-    // ---------- PUT: api/Tests/5 ----------
+    /// <summary>
+    /// Обновить существующий тест.
+    /// </summary>
+    /// <param name="id">Идентификатор теста для обновления</param>
+    /// <param name="test">Объект теста с обновлёнными данными</param>
+    /// <returns>Код 204 при успешном обновлении, 400 при несоответствии id, 404 если тест не найден</returns>
+    /// <remarks>
+    /// Доступно только преподавателям и администраторам.
+    /// </remarks>
     [Authorize(Roles = "Преподаватель,Администратор")]
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateTest(int id, Test test)
@@ -72,7 +113,14 @@ public class TestsController : ControllerBase
         return NoContent();
     }
 
-    // ---------- DELETE: api/Tests/5 ----------
+    /// <summary>
+    /// Удалить тест по идентификатору.
+    /// </summary>
+    /// <param name="id">Идентификатор теста для удаления</param>
+    /// <returns>Код 204 при успешном удалении или 404, если тест не найден</returns>
+    /// <remarks>
+    /// Доступно только преподавателям и администраторам.
+    /// </remarks>
     [Authorize(Roles = "Преподаватель,Администратор")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteTest(int id)
@@ -87,8 +135,15 @@ public class TestsController : ControllerBase
         return NoContent();
     }
 
-    // ---------- POST: api/Tests/submit ----------
-    // Студент отправляет ответы на тест
+    /// <summary>
+    /// Отправка ответов на тест студентом.
+    /// </summary>
+    /// <param name="model">Модель с идентификатором теста, пользователя и выбранными ответами</param>
+    /// <returns>Объект с оценкой, количеством вопросов и правильных ответов</returns>
+    /// <remarks>
+    /// Доступно только студентам.
+    /// Подсчёт баллов: процент правильных ответов.
+    /// </remarks>
     [Authorize(Roles = "Студент")]
     [HttpPost("submit")]
     public async Task<IActionResult> SubmitTest([FromBody] SubmitTestModel model)
@@ -133,16 +188,39 @@ public class TestsController : ControllerBase
     }
 }
 
-// ---------- Модель для отправки ответов ----------
+/// <summary>
+/// Модель для отправки ответов на тест студентом.
+/// </summary>
 public class SubmitTestModel
 {
+    /// <summary>
+    /// Идентификатор студента
+    /// </summary>
     public int UserId { get; set; }
+
+    /// <summary>
+    /// Идентификатор теста
+    /// </summary>
     public int TestId { get; set; }
+
+    /// <summary>
+    /// Список ответов на вопросы теста
+    /// </summary>
     public List<SubmitAnswerModel> Answers { get; set; }
 }
 
+/// <summary>
+/// Модель одного ответа студента на вопрос теста.
+/// </summary>
 public class SubmitAnswerModel
 {
+    /// <summary>
+    /// Идентификатор вопроса
+    /// </summary>
     public int QuestionId { get; set; }
+
+    /// <summary>
+    /// Идентификатор выбранного варианта ответа
+    /// </summary>
     public int SelectedOptionId { get; set; }
 }

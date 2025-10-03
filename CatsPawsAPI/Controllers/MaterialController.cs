@@ -2,19 +2,37 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 
+/// <summary>
+/// Контроллер для работы с лекционными материалами.
+/// </summary>
+/// <remarks>
+/// Доступ к материалам разделён по ролям:
+/// - Студент: просмотр материалов
+/// - Преподаватель: просмотр, создание, редактирование и удаление материалов
+/// - Администратор: полный доступ
+/// </remarks>
 [Route("api/[controller]")]
 [ApiController]
 public class MaterialsController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
 
+    /// <summary>
+    /// Конструктор контроллера MaterialsController.
+    /// </summary>
+    /// <param name="context">Контекст базы данных ApplicationDbContext</param>
     public MaterialsController(ApplicationDbContext context)
     {
         _context = context;
     }
 
-    // ---------- GET: api/Materials ----------
-    // Доступно всем авторизованным пользователям (Студенты и Преподаватели)
+    /// <summary>
+    /// Получить список всех материалов.
+    /// </summary>
+    /// <returns>Список материалов типа <see cref="Material"/></returns>
+    /// <remarks>
+    /// Доступно всем авторизованным пользователям: Студент, Преподаватель, Администратор.
+    /// </remarks>
     [Authorize(Roles = "Студент,Преподаватель,Администратор")]
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Material>>> GetMaterials()
@@ -22,7 +40,14 @@ public class MaterialsController : ControllerBase
         return await _context.Materials.ToListAsync();
     }
 
-    // ---------- GET: api/Materials/5 ----------
+    /// <summary>
+    /// Получить материал по идентификатору.
+    /// </summary>
+    /// <param name="id">Идентификатор материала</param>
+    /// <returns>Материал типа <see cref="Material"/> или код 404, если материал не найден</returns>
+    /// <remarks>
+    /// Доступно всем авторизованным пользователям: Студент, Преподаватель, Администратор.
+    /// </remarks>
     [Authorize(Roles = "Студент,Преподаватель,Администратор")]
     [HttpGet("{id}")]
     public async Task<ActionResult<Material>> GetMaterial(int id)
@@ -34,8 +59,14 @@ public class MaterialsController : ControllerBase
         return material;
     }
 
-    // ---------- POST: api/Materials ----------
-    // Только преподаватели и администраторы могут создавать материалы
+    /// <summary>
+    /// Создать новый материал.
+    /// </summary>
+    /// <param name="material">Объект материала для создания</param>
+    /// <returns>Созданный материал с кодом 201 и ссылкой на ресурс</returns>
+    /// <remarks>
+    /// Доступно только преподавателям и администраторам.
+    /// </remarks>
     [Authorize(Roles = "Преподаватель,Администратор")]
     [HttpPost]
     public async Task<ActionResult<Material>> CreateMaterial(Material material)
@@ -46,7 +77,15 @@ public class MaterialsController : ControllerBase
         return CreatedAtAction(nameof(GetMaterial), new { id = material.MaterialId }, material);
     }
 
-    // ---------- PUT: api/Materials/5 ----------
+    /// <summary>
+    /// Обновить существующий материал.
+    /// </summary>
+    /// <param name="id">Идентификатор материала для обновления</param>
+    /// <param name="material">Объект материала с обновлёнными данными</param>
+    /// <returns>Код 204 при успешном обновлении, 400 при несоответствии id, 404 если материал не найден</returns>
+    /// <remarks>
+    /// Доступно только преподавателям и администраторам.
+    /// </remarks>
     [Authorize(Roles = "Преподаватель,Администратор")]
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateMaterial(int id, Material material)
@@ -71,7 +110,14 @@ public class MaterialsController : ControllerBase
         return NoContent();
     }
 
-    // ---------- DELETE: api/Materials/5 ----------
+    /// <summary>
+    /// Удалить материал по идентификатору.
+    /// </summary>
+    /// <param name="id">Идентификатор материала для удаления</param>
+    /// <returns>Код 204 при успешном удалении или 404, если материал не найден</returns>
+    /// <remarks>
+    /// Доступно только преподавателям и администраторам.
+    /// </remarks>
     [Authorize(Roles = "Преподаватель,Администратор")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteMaterial(int id)
